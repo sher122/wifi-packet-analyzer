@@ -36,11 +36,28 @@ def main():
             bssid = packet[Dot11].addr3
             print("BSSID:", bssid)
 
-            # Extract SSID
-            ssid = packet[Dot11Elt].info.decode(
-                "utf-8",
-                errors="replace"
-            )
+            # Find the SSID information element (ID 0)
+            ssid = None
+            element = packet.getlayer(Dot11Elt)
+
+            while isinstance(element, Dot11Elt):
+
+                if element.ID == 0:
+                    ssid = element.info.decode(
+                        "utf-8",
+                        errors="replace"
+                    )
+                    break
+
+                # Move to the next information element
+                element = element.payload
+
+            # Handle a missing SSID element
+            if ssid is None:
+                ssid = "<SSID not found>"
+            elif ssid == "":
+                ssid = "<Hidden SSID>"
+
             print("SSID:", ssid)
 
             # Extract channel
