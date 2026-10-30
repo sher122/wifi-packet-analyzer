@@ -60,6 +60,22 @@ def main():
 
     print("802.11 Beacon Frame:")
     print(packet.summary())
+        # Display the Frame Control field
+    print("\nFrame Control information:")
+    print("Type:", packet.type)
+    print("Subtype:", packet.subtype)
+    # Convert Scapy's flag value into an integer
+    fc_flags = int(packet.FCfield)
+    # Check individual Frame Control flags
+    print("To DS:", fc_flags & 0x01)
+    print("From DS:", fc_flags & 0x02)
+    # Check Retry and Protected Frame flags
+    print("Retry:", bool(fc_flags & 0x08))
+    print("Protected:", bool(fc_flags & 0x40))
+
+    # Display the raw first two bytes
+    raw_packet = bytes(packet)
+    print("Frame Control bytes:", raw_packet[:2].hex())
 
     print("\nDetailed Beacon Information:")
     packet.show2()
