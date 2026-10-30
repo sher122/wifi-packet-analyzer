@@ -1,27 +1,20 @@
-# Import Scapy's packet-building tools
-from scapy.all import Ether, IP, ICMP
+# Import the IEEE 802.11 packet layer
+from scapy.all import Dot11
 
 
 def main():
 
-    # Create an artificial Ethernet packet
-    packet = Ether()
+    # Create an IEEE 802.11 frame
+    wifi_frame = Dot11()
 
-    # Add an IP layer
-    packet = packet / IP(dst="8.8.8.8")
+    # Display a short summary
+    print("Our first Wi-Fi frame:")
+    print(wifi_frame.summary())
 
-    # Add an ICMP layer
-    packet = packet / ICMP()
-
-    # Display the packet summary
-    print("Our first packet:")
-    print(packet.summary())
-
-    # Display detailed packet information
-    print("\nDetailed packet information:")
-    packet.show()
+    # Display detailed frame information
+    print("\nDetailed Wi-Fi frame:")
+    wifi_frame.show()
 
 
-# Start the program
 if __name__ == "__main__":
     main()
