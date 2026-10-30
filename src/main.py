@@ -10,12 +10,17 @@ from scapy.all import (
 from scapy.layers.dot11 import AKMSuite
 
 
-def main():
+def build_beacon(ssid, ap_mac, channel_number):
+    """
+    Build and return one IEEE 802.11 Beacon frame.
 
-    # MAC address of our example access point
-    ap_mac = "AA:BB:CC:DD:EE:FF"
+    Parameters:
+        ssid: Wi-Fi network name
+        ap_mac: Access point MAC address
+        channel_number: Wi-Fi channel
+    """
 
-    # Create an 802.11 management Beacon frame
+    # Create the 802.11 management frame
     wifi_frame = Dot11(
         type=0,
         subtype=8,
@@ -24,83 +29,84 @@ def main():
         addr3=ap_mac
     )
 
-    # Create the Beacon information
+    # Configure Beacon capabilities
     beacon = Dot11Beacon(
         cap="ESS+privacy+short-preamble"
     )
-    # IE 0: SSID (Element ID 0)
-    ssid = Dot11Elt(
+
+    # IE 0: SSID
+    ssid_element = Dot11Elt(
         ID=0,
-        info=b"Training_WiFi"
+        info=ssid.encode("utf-8")
     )
-    # IE 1: Supported Rates (Element ID 1)
+
+    # IE 1: Supported Rates
     supported_rates = Dot11Elt(
         ID=1,
         info=bytes([0x82, 0x84, 0x8B, 0x96])
     )
 
-    # IE 2: DS Parameter Set (Element ID 3)
+    # IE 3: DS Parameter Set (channel)
     channel = Dot11Elt(
         ID=3,
-        info=bytes([6])
+        info=bytes([channel_number])
     )
 
-    # IE 3: RSN (Element ID 48)
-    # Example WPA2-Personal security configuration
+    # IE 48: RSN security information
     rsn = Dot11EltRSN(
         akm_suites=[AKMSuite(suite=2)],
         mfp_capable=0,
         mfp_required=0
     )
 
-    # Combine the layers into a Beacon frame.
-    # Notice that we intentionally omit the SSID element.
-    ssid = Dot11Elt(
-    ID=0,
-    info=b"Training_WiFi"
-)
+    # Combine all packet layers
     packet = (
         wifi_frame
         / beacon
-        / ssid
+        / ssid_element
         / supported_rates
         / channel
         / rsn
     )
 
-    # Display a short packet summary
-    print("802.11 Beacon Frame:")
-    print(packet.summary())
+    # Return the completed packet
+    return packet
 
-    # Display Frame Control information
-    print("\nFrame Control information:")
-    print("Type:", packet.type)
-    print("Subtype:", packet.subtype)
 
-    # Convert Scapy's flags into an integer
-    fc_flags = int(packet.FCfield)
+def main():
 
-    print("To DS:", fc_flags & 0x01)
-    print("From DS:", fc_flags & 0x02)
-    print("Retry:", bool(fc_flags & 0x08))
-    print("Protected:", bool(fc_flags & 0x40))
+    # Create Beacon frames for three example access points
+    beacon_1 = build_beacon(
+        "Training_WiFi",
+        "AA:BB:CC:DD:EE:FF",
+        6
+    )
 
-    # Display the first two serialized Frame Control bytes
-    raw_packet = bytes(packet)
-    print("Frame Control bytes:", raw_packet[:2].hex())
+    beacon_2 = build_beacon(
+        "Office_WiFi",
+        "11:22:33:44:55:66",
+        11
+    )
 
-    # Display detailed Beacon information
-    print("\nDetailed Beacon Information:")
-    packet.show2()
+    beacon_3 = build_beacon(
+        "Guest_WiFi",
+        "22:33:44:55:66:77",
+        1
+    )
 
-    # Display serialized packet length
-    print("\nSerialized packet length:")
-    print(len(bytes(packet)), "bytes")
+    # Store all Beacon packets in a list
+    packets = [
+        beacon_1,
+        beacon_2,
+        beacon_3
+    ]
 
-    # Save the Beacon into a PCAP file
-    wrpcap("samples/beacon_sample.pcap", packet)
+    # Save all three packets into one PCAP file
+    wrpcap("samples/beacon_sample.pcap", packets)
 
-    print("\nBeacon saved to samples/beacon_sample.pcap")
+    print("Multiple Beacon frames generated successfully!")
+    print("Total Beacon frames:", len(packets))
+    print("Capture saved to samples/beacon_sample.pcap")
 
 
 if __name__ == "__main__":
