@@ -1,16 +1,27 @@
-# Main entry point of the Wi-Fi Packet Analyzer
+# Import Scapy's packet-building tools
+from scapy.all import Ether, IP, ICMP
+
 
 def main():
-    # Display the application name
-    print("802.11 Wi-Fi Packet Analyzer")
 
-    # Display the current development status
-    print("Project initialized successfully!")
+    # Create an artificial Ethernet packet
+    packet = Ether()
 
-    # Tell the user what comes next
-    print("Ready to begin packet analysis.")
+    # Add an IP layer
+    packet = packet / IP(dst="8.8.8.8")
+
+    # Add an ICMP layer
+    packet = packet / ICMP()
+
+    # Display the packet summary
+    print("Our first packet:")
+    print(packet.summary())
+
+    # Display detailed packet information
+    print("\nDetailed packet information:")
+    packet.show()
 
 
-# Start the application
+# Start the program
 if __name__ == "__main__":
     main()
