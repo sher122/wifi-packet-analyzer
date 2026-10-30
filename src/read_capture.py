@@ -1,3 +1,4 @@
+
 from scapy.all import (
     rdpcap,
     Dot11,
@@ -9,12 +10,11 @@ from scapy.all import (
 
 
 def main():
-    # Read packets from our sample capture
+
+    # Read packets from the sample capture
     packets = rdpcap("samples/beacon_sample.pcap")
 
-    print("Total packets captured:", len(packets))
-
-    # Convert IEEE suite identifiers into readable names
+    # Convert cipher identifiers into readable names
     cipher_names = {
         4: "CCMP-128"
     }
@@ -24,71 +24,112 @@ def main():
         2: "PSK"
     }
 
-    # Examine each packet
+    # Store information about detected networks
+    networks = []
+
+    # Count Beacon frames
+    beacon_count = 0
+
+    # Examine every packet
     for packet in packets:
 
         # Process only Beacon frames
-        if packet.haslayer(Dot11Beacon):
+        if not packet.haslayer(Dot11Beacon):
+            continue
 
-            print("\nBeacon frame detected!")
+        # Count every Beacon frame, including duplicates
+        beacon_count += 1
 
-            # Extract BSSID
-            bssid = packet[Dot11].addr3
-            print("BSSID:", bssid)
+        # Extract BSSID
+        bssid = packet[Dot11].addr3
 
-            # Find the SSID information element (ID 0)
-            ssid = None
-            element = packet.getlayer(Dot11Elt)
+        # Extract SSID information element
+        ssid = None
+        element = packet.getlayer(Dot11Elt)
 
-            while isinstance(element, Dot11Elt):
+        while isinstance(element, Dot11Elt):
 
-                if element.ID == 0:
-                    ssid = element.info.decode(
-                        "utf-8",
-                        errors="replace"
-                    )
-                    break
+            if element.ID == 0:
+                ssid = element.info.decode(
+                    "utf-8",
+                    errors="replace"
+                )
+                break
 
-                # Move to the next information element
-                element = element.payload
+            element = element.payload
 
-            # Handle a missing SSID element
-            if ssid is None:
-                ssid = "<SSID not found>"
-            elif ssid == "":
-                ssid = "<Hidden SSID>"
+        # Handle missing and hidden SSIDs
+        if ssid is None:
+            ssid = "<SSID not found>"
+        elif ssid == "":
+            ssid = "<Hidden SSID>"
 
-            print("SSID:", ssid)
+        # Extract channel
+        channel = "Unknown"
 
-            # Extract channel
-            if packet.haslayer(Dot11EltDSSSet):
-                channel = packet[Dot11EltDSSSet].channel
-                print("Channel:", channel)
+        if packet.haslayer(Dot11EltDSSSet):
+            channel = packet[Dot11EltDSSSet].channel
 
-            # Extract RSN security information
-            if packet.haslayer(Dot11EltRSN):
+        # Extract security information
+        security = "Unknown"
 
-                rsn = packet[Dot11EltRSN]
+        if packet.haslayer(Dot11EltRSN):
 
-                group_value = rsn.group_cipher_suite.cipher
-                pairwise_value = rsn.pairwise_cipher_suites[0].cipher
+            rsn = packet[Dot11EltRSN]
+
+            if rsn.akm_suites:
                 akm_value = rsn.akm_suites[0].suite
 
-                group_cipher = cipher_names.get(
-                    group_value, f"Unknown ({group_value})"
-                )
-
-                pairwise_cipher = cipher_names.get(
-                    pairwise_value, f"Unknown ({pairwise_value})"
-                )
-
                 authentication = akm_names.get(
-                    akm_value, f"Unknown ({akm_value})"
+                    akm_value,
+                    f"Unknown ({akm_value})"
                 )
 
-                print("Group Cipher:", group_cipher)
-                print("Pairwise Cipher:", pairwise_cipher)
-                print("Authentication:", authentication)
+                if authentication == "PSK":
+                    security = "WPA2-PSK"
+                else:
+                    security = authentication
+
+        # Skip duplicate access points
+        if any(existing["bssid"] == bssid for existing in networks):
+            continue
+
+        # Store the network details
+        network = {
+            "ssid": ssid,
+            "bssid": bssid,
+            "channel": channel,
+            "security": security
+        }
+
+        networks.append(network)
+
+    # Display the final network summary
+    print("\n========== WI-FI NETWORK SUMMARY ==========\n")
+
+    print(
+        f"{'SSID':<18}"
+        f"{'BSSID':<23}"
+        f"{'CHANNEL':<10}"
+        f"{'SECURITY'}"
+    )
+
+    print("-" * 70)
+
+    for network in networks:
+
+        print(
+            f"{network['ssid']:<18}"
+            f"{network['bssid']:<23}"
+            f"{str(network['channel']):<10}"
+            f"{network['security']}"
+        )
+
+    # Display capture statistics
+    print("\n========== CAPTURE STATISTICS ==========")
+    print("Total packets captured:", len(packets))
+    print("Total Beacon frames:", beacon_count)
+    print("Total unique access points:", len(networks))
 
 
 if __name__ == "__main__":
