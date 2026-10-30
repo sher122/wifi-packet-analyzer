@@ -98,7 +98,8 @@ def main():
     packets = [
         beacon_1,
         beacon_2,
-        beacon_3
+        beacon_3,
+        beacon_1
     ]
 
     # Save all three packets into one PCAP file

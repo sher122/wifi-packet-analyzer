@@ -1,4 +1,4 @@
-
+import csv
 from scapy.all import (
     rdpcap,
     Dot11,
@@ -7,6 +7,43 @@ from scapy.all import (
     Dot11EltDSSSet,
     Dot11EltRSN
 )
+
+
+def export_to_csv(networks):
+
+    # Define the output CSV file
+    output_file = "reports/wifi_networks.csv"
+
+    # Define CSV column names
+    fieldnames = [
+        "SSID",
+        "BSSID",
+        "Channel",
+        "Security"
+    ]
+
+    # Write network information into the CSV file
+    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+
+        writer = csv.DictWriter(
+            csvfile,
+            fieldnames=fieldnames
+        )
+
+        # Write the column headings
+        writer.writeheader()
+
+        # Write each network record
+        for network in networks:
+
+            writer.writerow({
+                "SSID": network["ssid"],
+                "BSSID": network["bssid"],
+                "Channel": network["channel"],
+                "Security": network["security"]
+            })
+
+    print("\nCSV report generated:", output_file)
 
 
 def main():
@@ -130,7 +167,8 @@ def main():
     print("Total packets captured:", len(packets))
     print("Total Beacon frames:", beacon_count)
     print("Total unique access points:", len(networks))
-
+    # Export the detected networks
+    export_to_csv(networks)
 
 if __name__ == "__main__":
     main()
