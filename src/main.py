@@ -1,6 +1,12 @@
-from scapy.all import Dot11, Dot11Beacon, Dot11Elt, Dot11EltRSN
-from scapy.layers.dot11 import AKMSuite
+from scapy.all import (
+    Dot11,
+    Dot11Beacon,
+    Dot11Elt,
+    Dot11EltRSN,
+    wrpcap
+)
 
+from scapy.layers.dot11 import AKMSuite
 
 def main():
     # MAC address of our example access point
@@ -82,7 +88,10 @@ def main():
 
     print("\nSerialized packet length:")
     print(len(bytes(packet)), "bytes")
+        # Save our constructed Beacon into a PCAP file
+    wrpcap("samples/beacon_sample.pcap", packet)
 
+    print("\nBeacon saved to samples/beacon_sample.pcap")
 
 if __name__ == "__main__":
     main()
