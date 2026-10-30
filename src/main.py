@@ -16,7 +16,10 @@ def main():
     )
 
     # Create the Beacon information
-    beacon = Dot11Beacon()
+    # Configure Beacon capability flags
+    beacon = Dot11Beacon(
+    cap="ESS+privacy+short-preamble"
+)
 
     # IE 1: SSID (Element ID 0)
     ssid = Dot11Elt(
@@ -67,4 +70,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
