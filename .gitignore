@@ -8,3 +8,6 @@ __pycache__/
 # Virtual environments
 .venv/
 venv/
+
+# Private real-world packet capture
+samples/real_traffic.pcapng
